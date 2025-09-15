@@ -1,10 +1,17 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext"; // <- import auth context
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -12,41 +19,54 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { login } = useAuth(); // <- get login function from context
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // TODO: Replace with actual API call to your PHP backend
     try {
-      // Mock API call - replace with actual endpoint
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      // Try admin login first
+      const response = await fetch("http://localhost:5000/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        // Store auth token in localStorage
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('userRole', data.role);
-        
+        login(data.token, "admin"); // update context
+        localStorage.setItem("adminId", data.adminId);
+
+        toast({
+          title: "Login successful",
+          description: "Welcome, admin!",
+        });
+
+        navigate("/admin");
+        return;
+      }
+
+      // fallback to user login
+      const userResponse = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        login(userData.token, "user"); // update context
+        localStorage.setItem("userId", userData.userId);
+
         toast({
           title: "Login successful",
           description: "Welcome back!",
         });
 
-        // Redirect based on user role
-        if (data.role === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/dashboard');
-        }
+        navigate("/dashboard");
       } else {
-        throw new Error('Login failed');
+        throw new Error("Invalid credentials");
       }
     } catch (error) {
       toast({
@@ -64,7 +84,9 @@ const LoginPage = () => {
       <Card className="w-full max-w-md shadow-medium">
         <CardHeader className="text-center">
           <div className="w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-primary-foreground font-bold text-2xl">T</span>
+            <span className="text-primary-foreground font-bold text-2xl">
+              T
+            </span>
           </div>
           <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
           <CardDescription>
@@ -85,7 +107,7 @@ const LoginPage = () => {
                 className="w-full"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -99,23 +121,10 @@ const LoginPage = () => {
               />
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <Link to="/signup" className="text-primary hover:underline font-medium">
-                Sign up here
-              </Link>
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>

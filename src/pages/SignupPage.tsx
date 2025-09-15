@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
@@ -43,36 +49,29 @@ const SignupPage = () => {
     // TODO: Replace with actual API call to your PHP backend
     try {
       // Mock API call - replace with actual endpoint
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          password: formData.password,
-          company: formData.company,
-        }),
+      const response = await fetch("http://localhost:5000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       });
 
       if (response.ok) {
         const data = await response.json();
-        
+
         toast({
           title: "Account created successfully",
           description: "Please sign in with your new account.",
         });
 
-        navigate('/login');
+        navigate("/login");
       } else {
-        throw new Error('Registration failed');
+        throw new Error("Registration failed");
       }
     } catch (error) {
       toast({
         title: "Registration failed",
-        description: "There was an error creating your account. Please try again.",
+        description:
+          "There was an error creating your account. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -85,7 +84,9 @@ const SignupPage = () => {
       <Card className="w-full max-w-md shadow-medium">
         <CardHeader className="text-center">
           <div className="w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-primary-foreground font-bold text-2xl">T</span>
+            <span className="text-primary-foreground font-bold text-2xl">
+              T
+            </span>
           </div>
           <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
           <CardDescription>
@@ -145,7 +146,7 @@ const SignupPage = () => {
                 onChange={handleInputChange}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -172,11 +173,7 @@ const SignupPage = () => {
               />
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
@@ -184,7 +181,10 @@ const SignupPage = () => {
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link to="/login" className="text-primary hover:underline font-medium">
+              <Link
+                to="/login"
+                className="text-primary hover:underline font-medium"
+              >
                 Sign in here
               </Link>
             </p>

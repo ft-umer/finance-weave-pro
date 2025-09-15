@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Download, Plus, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 
 interface Invoice {
   id: string;
@@ -19,6 +20,7 @@ interface Invoice {
 const ClientDashboard = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -27,8 +29,7 @@ const ClientDashboard = () => {
 
   const fetchInvoices = async () => {
     try {
-      // TODO: Replace with actual API call to your PHP backend
-      const response = await fetch('/api/invoices/my-invoices', {
+      const response = await fetch('http://localhost:5000/api/invoices/my-invoices', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
         },
@@ -37,6 +38,8 @@ const ClientDashboard = () => {
       if (response.ok) {
         const data = await response.json();
         setInvoices(data);
+      } else {
+        throw new Error("Failed to fetch invoices");
       }
     } catch (error) {
       toast({
@@ -51,7 +54,6 @@ const ClientDashboard = () => {
 
   const downloadInvoice = async (invoiceId: string) => {
     try {
-      // TODO: Replace with actual API call to your PHP backend
       const response = await fetch(`/api/invoices/${invoiceId}/download`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -96,35 +98,7 @@ const ClientDashboard = () => {
     }
   };
 
-  // Mock data for demo - replace with real data from your backend
-  const mockInvoices: Invoice[] = [
-    {
-      id: '1',
-      invoiceNumber: 'INV-2024-001',
-      date: '2024-01-15',
-      amount: 500.00,
-      status: 'paid',
-      description: 'Tax Preparation Services Q4 2023'
-    },
-    {
-      id: '2',
-      invoiceNumber: 'INV-2024-002',
-      date: '2024-02-20',
-      amount: 750.00,
-      status: 'pending',
-      description: 'Business Tax Consultation'
-    },
-    {
-      id: '3',
-      invoiceNumber: 'INV-2024-003',
-      date: '2024-03-10',
-      amount: 300.00,
-      status: 'overdue',
-      description: 'Personal Tax Review'
-    }
-  ];
-
-  const displayInvoices = invoices.length > 0 ? invoices : mockInvoices;
+  const displayInvoices = invoices;
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -174,13 +148,38 @@ const ClientDashboard = () => {
                     <div className="flex justify-between items-center">
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Date: {invoice.date}</p>
-                        <p className="text-lg font-semibold">${invoice.amount.toFixed(2)}</p>
+                        <p className="text-lg font-semibold">${Number(invoice.amount).toFixed(2)}</p>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="w-4 h-4 mr-2" />
-                          View
-                        </Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setSelectedInvoice(invoice)}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              View
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Invoice {selectedInvoice?.invoiceNumber}</DialogTitle>
+                              <DialogDescription>
+                                Detailed information about this invoice.
+                              </DialogDescription>
+                            </DialogHeader>
+                            {selectedInvoice && (
+                              <div className="space-y-3">
+                                <p><strong>Date:</strong> {selectedInvoice.date}</p>
+                                <p><strong>Description:</strong> {selectedInvoice.description}</p>
+                                <p><strong>Status:</strong> {selectedInvoice.status}</p>
+                                <p><strong>Amount:</strong> ${Number(selectedInvoice.amount).toFixed(2)}</p>
+                              </div>
+                            )}
+                          </DialogContent>
+                        </Dialog>
+
                         <Button 
                           variant="outline" 
                           size="sm"

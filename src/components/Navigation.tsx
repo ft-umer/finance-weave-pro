@@ -1,14 +1,16 @@
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
-interface NavigationProps {
-  isAuthenticated?: boolean;
-  userRole?: 'client' | 'admin';
-  onLogout?: () => void;
-}
-
-const Navigation = ({ isAuthenticated = false, userRole, onLogout }: NavigationProps) => {
+const Navigation = () => {
+   const navigate = useNavigate();
   const location = useLocation();
+  const { role, logout } = useAuth();
+  
+    const handleLogout = () => {
+    logout(); // clear auth context / token
+    navigate("/login"); // redirect to login page
+  };
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -37,11 +39,11 @@ const Navigation = ({ isAuthenticated = false, userRole, onLogout }: NavigationP
               >
                 Home
               </Link>
-              
-              {isAuthenticated ? (
+
+              {role ? (
                 <>
                   <Link
-                    to={userRole === 'admin' ? '/admin' : '/dashboard'}
+                    to={role === 'admin' ? '/admin' : '/dashboard'}
                     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive('/dashboard') || isActive('/admin')
                         ? 'text-primary bg-professional-light' 
@@ -53,7 +55,7 @@ const Navigation = ({ isAuthenticated = false, userRole, onLogout }: NavigationP
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={onLogout}
+                    onClick={handleLogout}
                     className="ml-4"
                   >
                     Logout
@@ -62,14 +64,10 @@ const Navigation = ({ isAuthenticated = false, userRole, onLogout }: NavigationP
               ) : (
                 <div className="flex items-center space-x-2">
                   <Link to="/login">
-                    <Button variant="ghost" size="sm">
-                      Login
-                    </Button>
+                    <Button variant="ghost" size="sm">Login</Button>
                   </Link>
                   <Link to="/signup">
-                    <Button size="sm">
-                      Sign Up
-                    </Button>
+                    <Button size="sm">Sign Up</Button>
                   </Link>
                 </div>
               )}

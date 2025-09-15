@@ -8,6 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
+
 interface InvoiceItem {
   description: string;
   quantity: number;
@@ -82,7 +85,7 @@ const CreateInvoicePage = () => {
 
     try {
       // TODO: Replace with actual API call to your PHP backend
-      const response = await fetch('/api/invoices/create', {
+      const response = await fetch('http://localhost:5000/api/invoices/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,14 +114,93 @@ const CreateInvoicePage = () => {
     }
   };
 
-  const exportToExcel = () => {
-    // TODO: Implement Excel export functionality
-    // This would typically create an Excel file with the invoice data
-    toast({
-      title: "Excel Export",
-      description: "Excel export functionality will be connected to your backend.",
-    });
+const exportToExcel = async () => {
+  const invoice = {
+    ...invoiceData,
+    items,
+    total: calculateTotal(),
+    status: "pending",
   };
+
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Invoice");
+
+  // Set column widths
+  sheet.columns = [
+    { key: "A", width: 25 },
+    { key: "B", width: 25 },
+    { key: "C", width: 20 },
+    { key: "D", width: 20 },
+  ];
+
+  // === Title ===
+  sheet.mergeCells("A1:D1");
+  const titleCell = sheet.getCell("A1");
+  titleCell.value = "INVOICE";
+  titleCell.font = { size: 16, bold: true };
+  titleCell.alignment = { horizontal: "center" };
+
+  // === Company Info ===
+  sheet.mergeCells("A3:B3");
+  sheet.getCell("A3").value = "Your Company Name";
+  sheet.getCell("A3").font = { bold: true };
+
+  sheet.mergeCells("A4:B4");
+  sheet.getCell("A4").value = "Your Company Address";
+
+  // === Invoice Info ===
+  sheet.getCell("C3").value = "Invoice Number:";
+  sheet.getCell("D3").value = invoice.invoiceNumber;
+
+  sheet.getCell("C4").value = "Date:";
+  sheet.getCell("D4").value = invoice.date;
+
+  sheet.getCell("C5").value = "Due Date:";
+  sheet.getCell("D5").value = invoice.dueDate;
+
+  // === Client Info ===
+  sheet.mergeCells("A6:B6");
+  sheet.getCell("A6").value = "Bill To:";
+  sheet.getCell("A6").font = { bold: true };
+
+  sheet.mergeCells("A7:B7");
+  sheet.getCell("A7").value = invoice.clientName;
+
+  sheet.mergeCells("A8:B8");
+  sheet.getCell("A8").value = invoice.clientEmail;
+
+  sheet.mergeCells("A9:B9");
+  sheet.getCell("A9").value = invoice.clientAddress;
+
+  // === Items Table ===
+  const startRow = 11;
+  sheet.getRow(startRow).values = ["Description", "Quantity", "Rate", "Amount"];
+  sheet.getRow(startRow).font = { bold: true };
+  sheet.getRow(startRow).alignment = { horizontal: "center" };
+
+  invoice.items.forEach((item, idx) => {
+    const row = sheet.getRow(startRow + 1 + idx);
+    row.values = [item.description, item.quantity, item.rate, item.amount];
+  });
+
+  // === Total ===
+  const totalRow = sheet.getRow(startRow + 1 + invoice.items.length);
+  totalRow.getCell(3).value = "Total:";
+  totalRow.getCell(4).value = invoice.total;
+  totalRow.font = { bold: true };
+  totalRow.getCell(4).numFmt = '"$"#,##0.00'; // currency format
+
+  // === Notes ===
+  const notesRow = startRow + 3 + invoice.items.length;
+  sheet.mergeCells(`A${notesRow}:D${notesRow}`);
+  sheet.getCell(`A${notesRow}`).value = `Notes: ${invoice.notes}`;
+  sheet.getCell(`A${notesRow}`).alignment = { wrapText: true };
+
+  // === Save File ===
+  const buffer = await workbook.xlsx.writeBuffer();
+  saveAs(new Blob([buffer]), `${invoice.invoiceNumber}.xlsx`);
+};
+
 
   return (
     <div className="min-h-screen bg-muted/30">

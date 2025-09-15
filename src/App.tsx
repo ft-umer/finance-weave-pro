@@ -12,6 +12,7 @@ import ClientDashboard from "./pages/ClientDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import CreateInvoicePage from "./pages/CreateInvoicePage";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/protectedRoute/protectedRoutes";
 
 const queryClient = new QueryClient();
 
@@ -52,9 +53,9 @@ const App = () => {
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
-            <Route path="/dashboard" element={<ClientDashboard />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/create-invoice" element={<CreateInvoicePage />} />
+            <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['user']}><ClientDashboard /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/create-invoice" element={<ProtectedRoute allowedRoles={['user', 'admin']}><CreateInvoicePage /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
